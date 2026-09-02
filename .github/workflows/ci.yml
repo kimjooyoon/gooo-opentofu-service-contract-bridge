@@ -20,10 +20,11 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: 1.27.x
+          cache: false
 
       - name: Format source for CI
         shell: bash
-        run: gofmt -w $(find . -name '*.go' -not -path './.git/*')
+        run: find . -name '*.go' -not -path './.git/*' -print0 | xargs -0 gofmt -w
 
       - name: Build
         run: go build ./...
