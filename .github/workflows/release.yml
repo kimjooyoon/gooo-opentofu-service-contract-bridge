@@ -1,0 +1,85 @@
+name: Release v0.1.0
+
+on:
+  push:
+    tags:
+      - v0.1.0
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Locate successful main evidence
+        id: main-run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id=$(gh run list --workflow ci.yml --branch main --commit "$GITHUB_SHA" --status success --json databaseId --jq '.[0].databaseId')
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+
+      - name: Download main evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "${{ steps.main-run.outputs.run_id }}" --name bridge-evidence --dir "$RUNNER_TEMP/main-evidence"
+
+      - name: Check source and evidence identity
+        run: |
+          test -s "$RUNNER_TEMP/main-evidence/manifest.json"
+          test "$(jq -r '.release' "$RUNNER_TEMP/main-evidence/manifest.json")" = v0.1.0
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+
+      - name: Prepare draft release assets
+        run: |
+          release_dir="$RUNNER_TEMP/release-assets"
+          mkdir -p "$release_dir"
+          tar -czf "$release_dir/evidence-v0.1.0.tar.gz" -C "$RUNNER_TEMP/main-evidence" .
+          git archive --format=tar.gz --prefix=gooo-opentofu-service-contract-bridge-v0.1.0/ HEAD > "$release_dir/source-v0.1.0.tar.gz"
+          jq --arg tag v0.1.0 --arg sha "$GITHUB_SHA" --arg run "${{ steps.main-run.outputs.run_id }}" '{schema: .schema, release: $tag, tag_target_sha: $sha, main_ci_run_id: ($run | tonumber), source_manifest: .source, semantic_path: ["GOOO_AUTHORITY", "BOUNDED_OPENTOFU_READER", "BOUNDED_OPENAPI_READER", "DOSSIER_AND_MANIFEST"], local_execution_in_release_workflow: 0, draft_first: true, immutable_after_publish: true, assets: ["evidence-v0.1.0.tar.gz", "manifest-v0.1.0.json", "SHA256SUMS", "source-v0.1.0.tar.gz"]}' "$RUNNER_TEMP/main-evidence/manifest.json" > "$release_dir/manifest-v0.1.0.json"
+          (cd "$release_dir" && sha256sum evidence-v0.1.0.tar.gz manifest-v0.1.0.json source-v0.1.0.tar.gz > SHA256SUMS)
+          test "$(wc -l < "$release_dir/SHA256SUMS")" -eq 3
+
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create v0.1.0 --draft --verify-tag --title v0.1.0 --notes-file docs/release-v0.1.0.md
+
+      - name: Upload draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload v0.1.0 "$RUNNER_TEMP/release-assets/evidence-v0.1.0.tar.gz" "$RUNNER_TEMP/release-assets/manifest-v0.1.0.json" "$RUNNER_TEMP/release-assets/SHA256SUMS" "$RUNNER_TEMP/release-assets/source-v0.1.0.tar.gz"
+
+      - name: Verify draft assets before publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          test "$(gh release view v0.1.0 --json isDraft --jq '.isDraft')" = true
+          test "$(gh release view v0.1.0 --json assets --jq '.assets | length')" -eq 4
+          mkdir -p "$RUNNER_TEMP/release-download"
+          gh release download v0.1.0 --dir "$RUNNER_TEMP/release-download"
+          (cd "$RUNNER_TEMP/release-download" && sha256sum -c SHA256SUMS)
+
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit v0.1.0 --draft=false
+
+      - name: Preserve failed release inputs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-operational-refuted
+          path: |
+            ${{ runner.temp }}/main-evidence
+            ${{ runner.temp }}/release-assets
+          if-no-files-found: warn
+          retention-days: 14

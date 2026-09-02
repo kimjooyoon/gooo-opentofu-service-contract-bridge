@@ -1,0 +1,22 @@
+openapi: 3.1.0
+info:
+  title: Unknown Shop API
+  version: 1.0.0
+paths:
+  /orders:
+    get:
+      operationId: orders
+      responses:
+        '200':
+          description: orders response
+  /profile:
+    get:
+      operationId: profile
+      responses:
+        '200':
+          description: profile response
+  /reports:
+    get:
+      responses:
+        '200':
+          description: reports response

@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Shop API
+  version: 1.0.0
+paths:
+  /checkout:
+    get:
+      operationId: checkout
+      responses:
+        '200':
+          description: checkout response
+  /catalog:
+    get:
+      operationId: catalog
+      responses:
+        '200':
+          description: catalog response
+  /billing:
+    get:
+      operationId: billing
+      responses:
+        '200':
+          description: billing response
+  /search:
+    get:
+      operationId: search
+      responses:
+        '200':
+          description: search response
