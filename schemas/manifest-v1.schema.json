@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kimjooyoon/gooo-opentofu-service-contract-bridge/blob/main/schemas/manifest-v1.schema.json",
+  "title": "Gooo OpenTofu Service Contract Bridge manifest",
+  "type": "object",
+  "required": [
+    "schema", "authority_scope", "input_boundary", "output_boundary", "denominator",
+    "case_counts", "cases", "unknown_claims", "generated_artifact_count", "inventory",
+    "metrics", "mutation_boundary", "improvement", "external_user_utility"
+  ],
+  "properties": {
+    "schema": {"const": "gooo/opentofu-service-contract-bridge/v1"},
+    "authority_scope": {"const": "GOOO_CLAIMS_ONLY"},
+    "input_boundary": {"const": "READ_ONLY_SOURCE_REPOSITORY"},
+    "output_boundary": {"type": "string"},
+    "case_counts": {
+      "type": "object",
+      "required": ["CLOSED", "UNKNOWN", "REFUTED"],
+      "properties": {
+        "CLOSED": {"type": "integer", "minimum": 0},
+        "UNKNOWN": {"type": "integer", "minimum": 0},
+        "REFUTED": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "denominator": {
+      "type": "object",
+      "required": ["total_cases", "decision_order", "proof_cells", "indicator_cells", "activities", "proof_counts", "indicator_counts"],
+      "properties": {
+        "total_cases": {"type": "integer", "minimum": 1},
+        "decision_order": {"const": ["REFUTED", "UNKNOWN", "CLOSED"]},
+        "proof_cells": {"type": "array", "minItems": 12, "maxItems": 12},
+        "indicator_cells": {"type": "array", "minItems": 12, "maxItems": 12},
+        "activities": {"type": "array", "minItems": 12, "maxItems": 12},
+        "proof_counts": {"type": "object"},
+        "indicator_counts": {"type": "object"}
+      }
+    },
+    "unknown_claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["case_id", "mapping_rule", "unknown"],
+        "properties": {
+          "case_id": {"type": "string"},
+          "mapping_rule": {"type": "string"},
+          "unknown": {"$ref": "#/$defs/unknown"}
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["wall_ms", "peak_rss_kib", "peak_rss_state"],
+      "properties": {
+        "wall_ms": {"type": "integer", "minimum": 0},
+        "peak_rss_kib": {"type": "integer", "minimum": 0},
+        "peak_rss_state": {"type": "string"}
+      }
+    },
+    "mutation_boundary": {
+      "type": "object",
+      "required": ["repository_writes", "local_test_executions", "cross_project_required_gates", "source_mutations", "lockfile_mutations", "network_provider_resolutions", "opentofu_init_plan_apply_runs", "caller_owned_output_only"],
+      "properties": {
+        "repository_writes": {"const": 0},
+        "local_test_executions": {"const": 0},
+        "cross_project_required_gates": {"const": 0},
+        "source_mutations": {"const": 0},
+        "lockfile_mutations": {"const": 0},
+        "network_provider_resolutions": {"const": 0},
+        "opentofu_init_plan_apply_runs": {"const": 0},
+        "caller_owned_output_only": {"const": true}
+      }
+    },
+    "improvement": {"$ref": "#/$defs/status"},
+    "external_user_utility": {"$ref": "#/$defs/status"}
+  },
+  "$defs": {
+    "unknown": {
+      "type": "object",
+      "required": ["stage", "step", "reason", "unknown_class", "next_operation", "blocked_by"],
+      "properties": {
+        "stage": {"type": "string", "minLength": 1},
+        "step": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1},
+        "unknown_class": {"type": "string", "minLength": 1},
+        "next_operation": {"type": "string", "minLength": 1},
+        "blocked_by": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    },
+    "status": {
+      "type": "object",
+      "required": ["state", "reason", "unknown"],
+      "properties": {
+        "state": {"const": "UNKNOWN"},
+        "reason": {"type": "string"},
+        "unknown": {"$ref": "#/$defs/unknown"}
+      }
+    }
+  }
+}

@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.27.x
+
+      - name: Format source for CI
+        shell: bash
+        run: gofmt -w $(find . -name '*.go' -not -path './.git/*')
+
+      - name: Build
+        run: go build ./...
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Check shell syntax
+        run: bash -n scripts/*.sh
+
+      - name: Check workflow syntax
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
+
+      - name: Build bridge binary
+        run: go build -o "$RUNNER_TEMP/gooo-bridge" ./cmd/gooo-opentofu-service-contract-bridge
+
+      - name: Run fixed conformance suite
+        run: scripts/conformance.sh "$RUNNER_TEMP/gooo-bridge" "$GITHUB_WORKSPACE" "$RUNNER_TEMP/gooo-bridge-evidence"
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bridge-evidence
+          path: ${{ runner.temp }}/gooo-bridge-evidence
+          if-no-files-found: warn
+          retention-days: 14

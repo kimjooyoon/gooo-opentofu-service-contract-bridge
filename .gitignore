@@ -1,0 +1,4 @@
+# Generated evidence belongs in a caller-owned temporary directory.
+/out/
+/dist/
+*.local.json

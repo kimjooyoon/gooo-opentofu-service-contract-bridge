@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info:
+  title: Refuted Shop API
+  version: 1.0.0
+paths:
+  /events:
+    get:
+      operationId: events
+      responses:
+        '200':
+          description: events response
+  /events-post:
+    get:
+      operationId: events-post
+      responses:
+        '200':
+          description: events-post response
+  /checkout:
+    get:
+      operationId: checkout
+      responses:
+        '200':
+          description: checkout response
+  /admin:
+    get:
+      operationId: admin
+      responses:
+        '200':
+          description: admin response
