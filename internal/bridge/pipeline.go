@@ -233,7 +233,7 @@ func buildManifest(projection Projection, inventory Inventory, elapsed time.Dura
 		GeneratedArtifactCount: 4,
 		ArtifactDigestsExcludeManifest: true,
 		Inventory:              inventory,
-		Metrics:                RuntimeMetrics{WallMS: elapsed.Milliseconds(), PeakRSSKiB: peakRSS, PeakRSSState: rssState},
+		Metrics:                RuntimeMetrics{WallMS: int(elapsed.Milliseconds()), PeakRSSKiB: peakRSS, PeakRSSState: rssState},
 		MutationBoundary: MutationBoundary{
 			RepositoryWrites: 0, LocalTestExecutions: 0, CrossProjectRequiredGates: 0,
 			SourceMutations: 0, LockfileMutations: 0, NetworkProviderResolutions: 0,
